@@ -40,10 +40,10 @@ public class BoardController {
 		return "redirect:/board/list";  // 등록 작업 후 다시 목록화면으로 이동하기 위해 String 리턴. 'redirect:' 접두어를 붙이면 스프링 mvc가 내부적으로 response.sendRedirect() 처리
 	}
 	
-	@GetMapping("/get")
+	@GetMapping({"/get", "/modify"})
 	public void get(@RequestParam("bno") Long bno, Model model) {  // 화면 쪽으로 게시물을 전달해야 하므로 Model을 파라미터로 지정 
 		
-		log.info("/get");
+		log.info("/get or modify");
 		model.addAttribute("board", service.get(bno));
 	}
 	
@@ -65,5 +65,10 @@ public class BoardController {
 			rttr.addFlashAttribute("result", "success");
 		}
 		return "redirect:/board/list";
+	}
+	
+	@GetMapping("/register")
+	public void register() {
+		
 	}
 }
