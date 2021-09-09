@@ -18,4 +18,6 @@ public interface BoardService {
 	//public List<BoardVO> getList();  // 반환해야 할 데이터가 있는 메서드는 리턴타입을 지정
 	
 	public List<BoardVO> getList(Criteria cri);
+	
+	public int getTotal(Criteria cri);
 }
