@@ -50,7 +50,16 @@ public class BoardController {
 	@PostMapping("/register")
 	public String register(BoardVO board, RedirectAttributes rttr) {  // 등록된 게시물 번호를 같이 전달하기 위해서 rttr 사용
 		
+		log.info("===================");
+		
 		log.info("register: " + board);
+		
+		if(board.getAttachList() != null) {
+			
+			board.getAttachList().forEach(attach -> log.info(attach));
+			
+		}
+		log.info("===================");
 		
 		service.register(board);
 		
