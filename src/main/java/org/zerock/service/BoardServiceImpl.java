@@ -69,11 +69,25 @@ public class BoardServiceImpl implements BoardService{
 		return mapper.read(bno);
 	}
 	
+	@Transactional
 	@Override
 	public boolean modify(BoardVO board) {
 		log.info("===== modify =====" + board);
 		
-		return mapper.update(board) == 1;
+		attachMapper.deleteAll(board.getBno());  // 게시물의 기존 모든 첨부파일 삭제 후
+		
+		boolean modifyResult = mapper.update(board) == 1;
+		
+		if (modifyResult && board.getAttachList() != null && board.getAttachList().size() > 0) {
+			
+			board.getAttachList().forEach(attach -> {
+				
+				attach.setBno(board.getBno());
+				attachMapper.insert(attach);  // 수정화면에서 유저가 첨부한 파일들을 재등록 
+			});
+		}
+		
+		return modifyResult;
 	}
 	
 	@Transactional
