@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
 
 <%@include file="../includes/header.jsp" %>
 
@@ -34,7 +35,14 @@
 				<div class="form-group">
 					<label>Writer</label> <input class="form-control" name='writer' value='<c:out value="${board.writer }"/>' readonly="readonly">
 				</div>
-				<button data-oper='modify' class="btn btn-default">Modify</button>
+				
+				<sec:authentication property="principal" var="pinfo"/>
+				<sec:authorize access="isAuthenticated()">
+					<c:if test="${pinfo.username eq board.writer}">	
+					<button data-oper='modify' class="btn btn-default">Modify</button>
+					</c:if>
+				</sec:authorize>
+				
 				<button data-oper='list' class="btn btn-info">List</button>
 				
 				<form id='operForm' action="/board/modify" method="get">
@@ -133,7 +141,9 @@
 		<div class="panel panel-default"></div>
 		<div class="panel-heading">
 		<i class="fa fa=commnets fa-fw"></i> Reply
+			<sec:authorize access="isAuthenticated()">
 			<button id='addReplyBtn' class='btn btn-primary btn-xs pull-right'>New Reply</button>
+			</sec:authorize>
 		</div>
 	
 		<div class="panel-body">
@@ -405,9 +415,21 @@ $(document).ready(function() {
 	var modalRemoveBtn = $("#modalRemoveBtn");
 	var modalRegisterBtn = $("#modalRegisterBtn");
 		
+	var replier = null;
+	
+	<sec:authorize access="isAuthenticated()">
+	
+	replier = '<sec:authentication property="principal.username"/>';
+	
+	</sec:authorize>
+	
+	var csrfHeaderName = "${_csrf.headerName}";
+	var csrfTokenValue = "${_csrf.token}";
+	
 	$("#addReplyBtn").on("click", function(e){
 			
 		modal.find("input").val("");
+		modal.find("input[name='replier']").val(replier);
 		modalInputReplyDate.closest("div").hide();
 		modal.find("button[id != 'modalCloseBtn']").hide();
 			
@@ -417,6 +439,10 @@ $(document).ready(function() {
 			
 	});		
 		
+	$(document).ajaxSend(function(e, xhr, options){
+		xhr.setRequestHeader(csrfHeaderName, csrfTokenValue);
+	});
+	
 	modalRegisterBtn.on("click", function(e) {
 			
 		var reply = {
@@ -457,7 +483,23 @@ $(document).ready(function() {
 	
 	modalModBtn.on("click", function(e){
 		
-		var reply = {rno:modal.data("rno"), reply: modalInputReply.val()};
+		var originalReplier = modalInputReplier.val();
+		
+		var reply = {rno:modal.data("rno"), reply: modalInputReply.val(), replier: originalReplier};
+		
+		if(!replier){
+			alert("로그인 후 수정이 가능합니다");
+			modal.modal("hide");
+			return;
+		}
+		
+		console.log("Original Replier: " + originalReplier);
+		
+		if(replier != originalReplier){
+			alert("자신이 작성한 댓글만 수정이 가능합니다");
+			modal.modal("hide");
+			return;
+		}
 		
 		replyService.update(reply, function(result) {
 			
@@ -471,7 +513,26 @@ $(document).ready(function() {
 		
 		var rno = modal.data("rno");
 		
-		replyService.remove(rno, function(result){
+		console.log("RNO: " + rno);
+		console.log("REPLIER: "+ replier);
+		
+		if(!replier){
+			alert("로그인 후 삭제 가능합니다");
+			modal.modal("hide");
+			return;
+		}
+		
+		var originalReplier = modalInputReplier.val();
+		
+		console.log("Original replier: " + originalReplier);
+		
+		if(replier != originalReplier) {
+			alert("자신이 작성한 댓글만 삭제 가능합니다");
+			modal.modal("hide");
+			return;
+		}
+		
+		replyService.remove(rno, originalReplier, function(result){
 			
 			alert(result);
 			modal.modal("hide");
